@@ -33,7 +33,7 @@ public:
 	virtual ~IGizmoListener();
 	virtual void onTranslate(const vec3f& delta, const vec3f& pos) {}
 	virtual void onScale(const vec3f& delta, const vec3f& current) {}
-	virtual void onRotate(const quatf& delta, const quatf& current) {}
+	virtual void onRotate(const quatf& delta) {}
 
 	bool registerListener();
 	void unregisterListener();
@@ -50,7 +50,7 @@ public:
     //Axis
     GizmoAxis axis() const {return m_axis;}
     void setAxis(GizmoAxis axis) {m_axis = axis;}
-    int setAxis(const Ray& r);
+    virtual int setAxis(const Ray& r);
     
     vec4f axisColor(GizmoAxis a);
 protected:
@@ -96,6 +96,9 @@ public:
 
     void draw();
     int intersect(const Ray& r);
+    int setAxis(const Ray& r);
+
+    void rotate(GizmoAxis axis, float degree);
 protected:
 	void setup();
 
@@ -103,6 +106,10 @@ private:
 	SGMesh m_x;
 	SGMesh m_y;
 	SGMesh m_z;
+	SGMesh m_xs;
+	SGMesh m_ys;
+	SGMesh m_zs;
+
 };
 
 //Avatar
@@ -124,6 +131,7 @@ public:
 	virtual ~GizmoManager();
 
 	void draw();
+	void timestep();
     int intersect(const Ray& r);
 
     //Get
@@ -145,11 +153,20 @@ public:
 	GizmoInterface* current() const {return m_lpGizmoCurrent;}
 
 	//Set Node
-	void setNode(SGNode* node);
+	void setFocusedNode(SGNode* node);
 
 	//Clients
 	int registerClient(IGizmoListener* client);
 	void unregisterClient(int id);
+
+	static string AxisToStr(GizmoAxis axis);
+
+	void cmdTranslate(const vec3f& increment);
+	void cmdScale(const vec3f& increment);
+	void cmdRotate(const vec3f& axis, float degreeIncrement);
+
+protected:
+
 private:
 	GizmoTranslate* m_lpGizmoTranslate;
 	GizmoScale* m_lpGizmoScale;
@@ -160,18 +177,14 @@ private:
 	GizmoType m_gizmoType;
     GizmoAxis m_gizmoAxis;
 
-    //transform
-    vec3f m_pos;
-    vec3f m_scale;
-    quatf m_rotate;
-
 
     //Mouse State
     vec2i m_pressedPos;
+    PS::ArcBallCamera::MouseButton m_button;
     PS::ArcBallCamera::ButtonState m_buttonState;
 
     //Register SGNode
-    SGNode* m_lpSGNode;
+    SGNode* m_lpFocusedNode;
 
     //Registered clients
     vector<IGizmoListener*> m_clients;

@@ -18,6 +18,8 @@
 #include "base/MovingAverage.h"
 
 #include "ShaderManager.h"
+#include "TexManager.h"
+
 #include "ArcBallCamera.h"
 #include "SGNode.h"
 #include "SGHeaders.h"
@@ -54,9 +56,13 @@ public:
     void timestep();
 
     //Nodes
-    void add(SGNode* aNode);
-    void addSceneBox(const AABB& box);
-    void addFloor(int rows, int cols, float step = 1.0f);
+    U32 add(SGNode* aNode);
+    U32 addSceneBox(const AABB& box);
+    U32 addFloor(int rows, int cols, float step = 1.0f);
+    bool remove(U32 index);
+    bool remove(const string& name);
+    bool remove(const SGNode* pnode);
+
     U32 count() const {return (U32)m_vSceneNodes.size();}
     SGNode* get(U32 index) const {return m_vSceneNodes[index];}
     SGNode* get(const char* name) const;
@@ -96,13 +102,15 @@ public:
     //print structure
     void print(const char* switches = "-a") const;
 
+    //Save and Load view settings
+
+
     //Timing and Profiling services
 
     //Object Selection
 
     //Surfaces
 
-    //Save and Load view settings
     
 protected:
     void cleanup();
@@ -113,6 +121,8 @@ private:
 	CopyStack<mat44f> m_stkProjection;
 	CopyStack<mat44f> m_stkModelView;
 	std::vector<SGNode*> m_vSceneNodes;
+
+
     ArcBallCamera m_camera;
     SGHeaders* m_headers;
     int m_idCamHeader;

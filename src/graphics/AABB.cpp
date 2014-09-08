@@ -86,7 +86,7 @@ bool AABB::intersect(const Ray& ray, const Range& t, Range& hit) const {
 		tmax = tzmax;
 
 	hit.set(tmin, tmax);
-	return ((tmin < t.right) && (tmax > t.left));
+	return ((tmin < t.upper()) && (tmax > t.lower()));
 }
 
 bool AABB::intersect(const Ray& ray, float t0, float t1) const
@@ -109,6 +109,12 @@ void AABB::print() const {
 	printf("LO: [%.3f, %.3f, %.3f]\n", m_lower.x, m_lower.y, m_lower.z);
 	printf("HI: [%.3f, %.3f, %.3f]\n", m_upper.x, m_upper.y, m_upper.z);
 	printf("SIDES: [%.3f, %.3f, %.3f]\n", side.x, side.y, side.z);
+}
+
+void AABB::expand(float d) {
+	vec3f dh(d * 0.5);
+	m_lower = m_lower - dh;
+	m_upper = m_upper + dh;
 }
 
 

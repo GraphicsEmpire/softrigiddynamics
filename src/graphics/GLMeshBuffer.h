@@ -13,7 +13,7 @@
 #include "GLFuncs.h"
 #include "GLTypes.h"
 #include "Geometry.h"
-#include "SceneGraph.h"
+#include "SGNode.h"
 
 using namespace std;
 using namespace PS;
@@ -87,15 +87,15 @@ public:
 	void setupPerVertexColor(const vec4f& color, U32 ctVertices, int step = 4);
 	void setupIndexBufferObject(const vector<U32>& arrIndex, int faceMode = ftTriangles);
 
+	//update
+	bool updateVertexBuffer(U32 offset, U32 szTotal, const void* lpData);
+
     //Wireframe
 	bool getWireFrameMode() const {return m_bWireFrame;}
 	virtual void setWireFrameMode(bool bSet) { m_bWireFrame = bSet;}
 
 	int getFaceMode() const {return m_faceMode;}
-	void setFaceMode(int fmode) {
-		m_faceMode = fmode;
-		m_ctFaceElements = m_ctVertices;
-	}
+	void setFaceMode(int fmode);
 
 	U32 countVertices() const {return m_ctVertices;}
 	U32 countTriangles() const {return m_ctFaceElements/3;}

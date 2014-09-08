@@ -20,10 +20,15 @@ namespace SG {
 SceneGraph::SceneGraph() {
 	m_stkModelView.top().identity();
 	m_stkProjection.top().identity();
+
+	//add header to opaque list
 	m_headers = new SGHeaders();
 	m_vSceneNodes.push_back(m_headers);
+
+
 	m_tick = tbb::tick_count::now();
 	m_ctFrames = m_ctSampledFrames = 0;
+
 
 	//Headers to show
 	m_idGPUHeader = m_headers->addHeaderLine("gpu", gpuInfo());
@@ -44,21 +49,55 @@ void SceneGraph::cleanup() {
 	m_vSceneNodes.resize(0);
 }
 
-void SceneGraph::add(SGNode *aNode) {
-	if (aNode != NULL)
-		m_vSceneNodes.push_back(aNode);
+U32 SceneGraph::add(SGNode *aNode) {
+	if(aNode == NULL)
+		return -1;
+
+	m_vSceneNodes.push_back(aNode);
+	return (m_vSceneNodes.size() - 1);
 }
 
-void SceneGraph::addSceneBox(const AABB& box) {
+
+bool SceneGraph::remove(U32 index) {
+	if(index >= m_vSceneNodes.size())
+		return false;
+
+	m_vSceneNodes.erase(m_vSceneNodes.begin() + index);
+	return true;
+}
+
+bool SceneGraph::remove(const string& name) {
+	for (U32 i = 0; i < m_vSceneNodes.size(); i++) {
+		if (m_vSceneNodes[i]->name() == name) {
+			m_vSceneNodes.erase(m_vSceneNodes.begin() + i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool SceneGraph::remove(const SGNode* pnode) {
+	for (U32 i = 0; i < m_vSceneNodes.size(); i++) {
+		if (m_vSceneNodes[i] == pnode) {
+			m_vSceneNodes.erase(m_vSceneNodes.begin() + i);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+U32 SceneGraph::addSceneBox(const AABB& box) {
 	SGBox* lpBox = new SGBox(box.lower(), box.upper());
 	lpBox->setName("scenebox");
-	this->add(lpBox);
+	return this->add(lpBox);
 }
 
-void SceneGraph::addFloor(int rows, int cols, float step) {
+U32 SceneGraph::addFloor(int rows, int cols, float step) {
 	SGFloor* pFloor = new SGFloor(rows, cols, step);
 	pFloor->setName("floor");
-	this->add(pFloor);
+	return this->add(pFloor);
 }
 
 SGNode* SceneGraph::get(const char* name) const {
@@ -113,7 +152,6 @@ void SceneGraph::draw() {
 			m_vSceneNodes[i]->draw();
 	}
 
-
 	//Cull SwapBuffers of the API such as
 	//glutSwapBuffers
 }
@@ -130,6 +168,7 @@ void SceneGraph::drawBBoxes() {
 }
 
 void SceneGraph::timestep() {
+	//update
 	for (U32 i = 0; i < m_vSceneNodes.size(); i++) {
 		if(m_vSceneNodes[i]->isAnimate())
 			m_vSceneNodes[i]->timestep();
@@ -142,7 +181,6 @@ mat44f SceneGraph::modelviewprojection() const {
 }
 
 void SceneGraph::mouseMove(int x, int y) {
-	m_camera.setKeyModifier(m_keyModifier);
 	m_camera.mouseMove(x, y);
 	updateCameraHeader();
 }
@@ -154,8 +192,7 @@ void SceneGraph::mouseWheel(int button, int dir, int x, int y) {
 
 void SceneGraph::mousePress(int button, int state, int x, int y) {
 	// Wheel reports as button 3(scroll up) and button 4(scroll down)
-	if ((button == 3) || (button == 4)) // It's a wheel event
-			{
+	if ((button == 3) || (button == 4)) {
 		// Each wheel event reports like a button click, GLUT_DOWN then GLUT_UP
 		if (state == GLUT_UP)
 			return; // Disregard redundant GLUT_UP events
@@ -182,7 +219,8 @@ void SceneGraph::updateCameraHeader() {
 	sprintf(chrMsg, "Camera [Roll=%.1f, Tilt=%.1f, PanX=%.2f, PanY=%.2f]",
 			m_camera.getRoll(), m_camera.getTilt(), m_camera.getPan().x,
 			m_camera.getPan().y);
-	m_headers->updateHeaderLine(m_idCamHeader, AnsiStr(chrMsg));
+	AnsiStr strInfo = AnsiStr(chrMsg);
+	m_headers->updateHeaderLine(m_idCamHeader, strInfo);
 }
 
 bool SceneGraph::screenToWorld(const vec3f &s, vec3f &w) {

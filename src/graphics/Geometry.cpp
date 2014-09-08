@@ -6,18 +6,28 @@
  */
 #include "Geometry.h"
 #include "base/Logger.h"
+#include "base/FileDirectory.h"
+#include "Mesh.h"
 
 using namespace PS;
+using namespace PS::MESH;
+using namespace PS::FILESTRINGUTILS;
 
 namespace PS {
 namespace GL {
 
-Geometry::Geometry():m_stepVertex(3), m_stepColor(4), m_stepTexCoord(2), m_stepFace(3), m_faceMode(ftTriangles) {
-	this->init();
+Geometry::Geometry() {
+	init();
 }
 
-Geometry::Geometry(const Geometry& other):m_stepVertex(3), m_stepColor(4), m_stepTexCoord(2), m_stepFace(3), m_faceMode(ftTriangles) {
-	this->copyFrom(other);
+Geometry::Geometry(const Geometry& other) {
+	init();
+	copyFrom(other);
+}
+
+Geometry::Geometry(const AnsiStr& strFilePath) {
+	init();
+	this->read(strFilePath);
 }
 
 Geometry::~Geometry() {
@@ -32,9 +42,12 @@ void Geometry::cleanup() {
 	m_indices.resize(0);
 }
 
+void Geometry::init() {
+	init(3, 4, 2, ftTriangles);
+}
 
 void Geometry::init(int stepVertex, int stepColor,
-		   	   	   	   int stepTexCoords, int faceMode) {
+		   	   	   	   int stepTexCoords, PS::GL::FaceType faceMode) {
 	this->cleanup();
 	m_stepVertex = stepVertex;
 	m_stepColor = stepColor;
@@ -108,6 +121,13 @@ vec3u32 Geometry::triangleAt(int index) const {
 vec4u32 Geometry::quadAt(int index) const {
 	assert(index >= 0 && index < countFaces());
 	return vec4u32(&m_indices[index * m_stepFace]);
+}
+
+void Geometry::setVertex(int index, const vec3f& v) {
+
+	m_vertices[index * m_stepVertex] = v.x;
+	m_vertices[index * m_stepVertex + 1] = v.y;
+	m_vertices[index * m_stepVertex + 2] = v.z;
 }
 
 //Add Attributes
@@ -351,7 +371,7 @@ void Geometry::addPerVertexColor(const vec4f& color, U32 ctVertices) {
 	m_colors.insert(m_colors.end(), colors.begin(), colors.end());
 }
 
-bool Geometry::addFaceIndices(const vector<U32>& arrIndex, int faceMode) {
+bool Geometry::addFaceIndices(const vector<U32>& arrIndex, PS::GL::FaceType faceMode) {
 	if(m_faceMode != faceMode)
 		return false;
 
@@ -408,6 +428,64 @@ bool Geometry::appendFrom(const Geometry& other) {
 	return false;
 }
 
+bool Geometry::read(const AnsiStr& strFilePath) {
+    AnsiStr strExt = ExtractFileExt(strFilePath).toLower();
+    if(strExt == "obj")
+        return readObj(strFilePath);
+    return false;
+}
+
+bool Geometry::write(const AnsiStr& strFilePath) const {
+    AnsiStr strExt = ExtractFileExt(strFilePath).toLower();
+    if(strExt == "obj")
+        return writeObj(strFilePath);
+    return false;
+}
+
+bool Geometry::readObj(const AnsiStr& strFilePath) {
+	Mesh mesh(strFilePath.cptr());
+	MeshNode* node = mesh.getNode(0);
+
+	if(node == NULL)
+		return false;
+
+	int unitFace = node->getUnitFace();
+	if(unitFace != 3 && unitFace != 4)
+		return false;
+
+	PS::GL::FaceType ftype = ftTriangles;
+	if(node->getUnitFace() == 4)
+		ftype = ftQuads;
+
+	//read mesh info
+	init(node->getUnitVertex(), node->getUnitColor(), node->getUnitTexCoord(), ftype);
+	addVertexAttribs(node->vertices(), node->getUnitVertex(), mbtPosition);
+	addVertexAttribs(node->normals(), 3, mbtNormal);
+	addVertexAttribs(node->colors(), node->getUnitColor(), mbtColor);
+	addVertexAttribs(node->texcoords(), node->getUnitTexCoord(), mbtTexCoord);
+	addFaceIndices(node->faceElements(), ftype);
+
+	return true;
+}
+
+bool Geometry::writeObj(const AnsiStr& strFilePath) const {
+
+	MeshNode* pnode = new MeshNode();
+	pnode->setVertexAttrib(m_vertices, mbtPosition, m_stepVertex);
+	pnode->setVertexAttrib(m_normals, mbtNormal, 3);
+	pnode->setVertexAttrib(m_colors, mbtColor, m_stepColor);
+	pnode->setVertexAttrib(m_texCoords, mbtTexCoord, m_stepTexCoord);
+	pnode->setFaceIndices(m_indices, m_stepFace);
+
+
+	//store mesh
+	Mesh* pmesh = new Mesh();
+	pmesh->addNode(pnode);
+	bool bres = pmesh->store(strFilePath.cptr());
+	SAFE_DELETE(pmesh);
+
+	return bres;
+}
 
 Geometry& Geometry::operator=(const Geometry& other) {
 	this->copyFrom(other);
@@ -415,10 +493,12 @@ Geometry& Geometry::operator=(const Geometry& other) {
 }
 
 Geometry Geometry::operator+(const Geometry& other) const {
-	Geometry result = (*this);
+	Geometry result;
+	result.copyFrom(const_cast<const Geometry&>(*this));
 	result.appendFrom(other);
 	return result;
 }
+
 
 bool Geometry::computeNormalsFromFaces()
 {

@@ -89,6 +89,9 @@ public:
 	int addNormal(const vec3f& n);
 	int addTexCoord2(const vec2f& t);
 	int addTexCoord3(const vec3f& t);
+
+	void addTriangle(U32 tri[3]);
+	void addQuad(U32 quad[4]);
 	void addFaceIndex(U32 index);
 	void setFaceIndices(const vector<U32>& arrFaces, int unitFace);
 
@@ -187,12 +190,12 @@ protected:
 class Mesh : public Asset{
 public:
     Mesh();
-	Mesh(const char* chrFileName);
+	Mesh(const AnsiStr& strFilePath);
 	virtual ~Mesh();
 
 	//IO
-	bool load(const char* chrFilePath);
-	bool store(const char* chrFilePath);
+	bool read(const AnsiStr& strFilePath);
+	bool store(const AnsiStr& strFilePath);
 
 	//Mesh Nodes
 	void addNode(MeshNode* lpMeshNode);
@@ -226,7 +229,7 @@ private:
 	std::vector<MeshNode*> m_nodes;
 	std::vector<MeshMaterial*> m_materials;
     std::map<string, MeshMaterial*> m_mapMaterial;
-    string m_strFilePath;
+    AnsiStr m_strFilePath;
 };
 
 }
