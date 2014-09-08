@@ -14,12 +14,15 @@
 #include "graphics/AppScreen.h"
 #include "graphics/selectgl.h"
 #include "graphics/SGRenderMask.h"
+#include "deformable/AvatarScalpel.h"
 
 using namespace PS;
 using namespace PS::SG;
 using namespace PS::FILESTRINGUTILS;
 using namespace std;
 
+
+AvatarScalpel* g_lpScalpel = NULL;
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -270,6 +273,10 @@ int main(int argc, char* argv[]) {
 			TheSceneGraph::Instance().addRigidBody(acube);
 		}
 	}
+
+
+	//Add deformable object
+
 
 	//render mask
 //	SGRenderMask* renderMask = new SGRenderMask(TheTexManager::Instance().get("maskalpha"));

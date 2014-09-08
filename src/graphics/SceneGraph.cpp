@@ -22,7 +22,8 @@ SceneGraph::SceneGraph() {
 	m_stkProjection.top().identity();
 
 	//World
-	m_lpWorld = new SGBulletRigidDynamics();
+	//m_lpWorld = new SGBulletRigidDynamics();
+	m_lpWorld = new SGBulletSoftRigidDynamics();
 	m_vSceneNodes.push_back(m_lpWorld);
 
 	//add header to opaque list
@@ -64,6 +65,11 @@ U32 SceneGraph::add(SGNode *aNode) {
 U32 SceneGraph::addRigidBody(SGBulletRigidMesh* aRigidBody) {
 	m_lpWorld->addRigidBody(aRigidBody);
 	return add(aRigidBody);
+}
+
+U32 SceneGraph::addSoftBody(SGBulletSoftMesh* aSoftBody) {
+	m_lpWorld->addSoftBody(aSoftBody);
+	return add(aSoftBody);
 }
 
 bool SceneGraph::remove(U32 index) {
