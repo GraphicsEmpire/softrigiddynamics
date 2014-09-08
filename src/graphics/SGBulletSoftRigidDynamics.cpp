@@ -61,6 +61,14 @@ const btSoftRigidDynamicsWorld* SGBulletSoftRigidDynamics::getSoftDynamicsWorld(
 	return m_lpDynamicsWorld;
 }
 
+const btSoftBodyWorldInfo& SGBulletSoftRigidDynamics::getSoftBodyWorldInfo() const {
+	return m_softBodyWorldInfo;
+}
+
+btSoftBodyWorldInfo& SGBulletSoftRigidDynamics::getSoftBodyWorldInfo() {
+	return m_softBodyWorldInfo;
+}
+
 
 void SGBulletSoftRigidDynamics::timestep() {
 	m_lpDynamicsWorld->stepSimulation(1 / 60.f, 10);

@@ -35,6 +35,8 @@ public:
 	bool removeSoftBody(SGBulletSoftMesh* pMesh);
 
 	virtual const btSoftRigidDynamicsWorld*	getSoftDynamicsWorld() const;
+	const btSoftBodyWorldInfo& getSoftBodyWorldInfo() const;
+	btSoftBodyWorldInfo& getSoftBodyWorldInfo();
 
 	void draw();
 	void timestep();
