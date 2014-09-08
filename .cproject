@@ -29,7 +29,9 @@
 								<option id="gnu.cpp.compiler.option.include.paths.95198759" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty/bullet3}&quot;"/>
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
 									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/include"/>
 									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/include"/>
 								</option>
@@ -50,6 +52,7 @@
 								</option>
 								<option id="gnu.cpp.link.option.libs.1259765226" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="dl"/>
+									<listOptionValue builtIn="false" value="OpenCL"/>
 									<listOptionValue builtIn="false" value="pthread"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="tbb"/>
@@ -107,7 +110,9 @@
 								<option id="gnu.cpp.compiler.option.include.paths.359577561" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty/bullet3}&quot;"/>
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/include"/>
+									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
 									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/include"/>
 									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/include"/>
 								</option>

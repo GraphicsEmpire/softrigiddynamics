@@ -13,13 +13,13 @@
 #include "graphics/Gizmo.h"
 #include "graphics/AppScreen.h"
 #include "graphics/selectgl.h"
-
+#include "graphics/SGRenderMask.h"
 
 using namespace PS;
 using namespace PS::SG;
 using namespace PS::FILESTRINGUTILS;
-
 using namespace std;
+
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -31,6 +31,9 @@ void draw() {
 
 void timestep() {
 	TheSceneGraph::Instance().timestep();
+
+    //Update selection
+	glutPostRedisplay();
 }
 
 void MousePress(int button, int state, int x, int y)
@@ -197,54 +200,81 @@ int main(int argc, char* argv[]) {
 	glutCloseFunc(closeApp);
 	glutIdleFunc(timestep);
 
-	//Setup Shading Environment
-	static const GLfloat lightColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-	static const GLfloat lightPos[4] = { 0.0f, 9.0f, 0.0f, 1.0f };
-
-	//Setup Light0 Position and Color
-	glLightfv(GL_LIGHT0, GL_AMBIENT, lightColor);
-	glLightfv(GL_LIGHT0, GL_DIFFUSE, lightColor);
-	glLightfv(GL_LIGHT0, GL_SPECULAR, lightColor);
-	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-
-	//Turn on Light 0
-	glEnable(GL_LIGHT0);
-	//Enable Lighting
-	glEnable(GL_LIGHTING);
-
-	//Enable features we want to use from OpenGL
-	glShadeModel(GL_SMOOTH);
-	glEnable(GL_POLYGON_SMOOTH);
-	glEnable(GL_LINE_SMOOTH);
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_STENCIL_TEST);
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
-	//glClearColor(0.45f, 0.45f, 0.45f, 1.0f);
-	glClearColor(1.0, 1.0, 1.0, 1.0);
-
-	//Compiling shaders
-	GLenum err = glewInit();
-	if (err != GLEW_OK)
-	{
-		//Problem: glewInit failed, something is seriously wrong.
-		fprintf(stderr, "Error: %s\n", glewGetErrorString(err));
-		exit(1);
-	}
+	def_initgl();
 
 	//Build Shaders for drawing the mesh
 	AnsiStr strRoot = ExtractOneLevelUp(ExtractFilePath(GetExePath()));
 	AnsiStr strShaderRoot = strRoot + "data/shaders/";
+	AnsiStr strMeshRoot = strRoot + "data/meshes/";
+	AnsiStr strTextureRoot = strRoot + "data/textures/";
+
+	AnsiStr strLeftPial = strMeshRoot + "brain/pial_Full_obj/lh.pial.obj";
+	AnsiStr strRightPial = strMeshRoot + "brain/pial_Full_obj/rh.pial.obj";
 
 	//Load Shaders
 	TheShaderManager::Instance().addFromFolder(strShaderRoot.cptr());
 
+	//Load Textures
+	TheTexManager::Instance().add(strTextureRoot + "wood.png");
+	TheTexManager::Instance().add(strTextureRoot + "rendermask.png");
+	TheTexManager::Instance().add(strTextureRoot + "maskalpha.png");
+	TheTexManager::Instance().add(strTextureRoot + "maskalphafilled.png");
+
 	//Ground and Room
-	TheSceneGraph::Instance().addFloor(32, 32, 0.5f);
+	//TheSceneGraph::Instance().addFloor(32, 32, 0.5f);
 	TheSceneGraph::Instance().addSceneBox(AABB(vec3f(-10, -10, -16), vec3f(10, 10, 16)));
 
+
+	/*
+	//load brain mesh
+	SGMesh* leftpial = new SGMesh(strLeftPial);
+	leftpial->transform()->setScale(vec3f(0.01));
+	leftpial->transform()->rotate(vec3f(1, 0, 0), -90.0);
+	leftpial->transform()->translate(vec3f(4, 1, 0));
+	TheSceneGraph::Instance().add(leftpial);
+
+	SGMesh* rightpial = new SGMesh(strRightPial);
+	rightpial->transform()->setScale(vec3f(0.01));
+	rightpial->transform()->rotate(vec3f(1, 0, 0), -90.0);
+	rightpial->transform()->translate(vec3f(4, 1, 0));
+	TheSceneGraph::Instance().add(rightpial);
+	*/
+
+	//floor
+	Geometry g;
+	g.addCube(vec3f(-8, -0.1, -8), vec3f(8, 0, 8));
+	g.addPerVertexColor(vec4f(0.5, 0.5, 0.5, 1));
+	SGBulletRigidMesh* floor = new SGBulletRigidMesh();
+	floor->setup(g, 0.0);
+	floor->setName("floor");
+	TheSceneGraph::Instance().addRigidBody(floor);
+
+
+	//create rigid bodies
+	Geometry g1;
+	g1.addCube(vec3f(0.0, 0.0, 0.0), 1.0);
+	g1.addPerVertexColor(vec4f(0, 0, 1, 1));
+
+	for(int i=0; i < 8; i ++) {
+		for(int j=0; j < 8; j++) {
+			g1.colors().clear();
+
+			float r = RandRangeT<float>(0.0, 1.0);
+			float g = RandRangeT<float>(0.0, 1.0);
+			float b = RandRangeT<float>(0.0, 1.0);
+
+			g1.addPerVertexColor(vec4f(r, g, b, 1.0f));
+			SGBulletRigidMesh* acube = new SGBulletRigidMesh();
+			acube->transform()->setTranslate(vec3f(i-3, 10.0, j-3));
+			acube->setup(g1, 1.0);
+			TheSceneGraph::Instance().addRigidBody(acube);
+		}
+	}
+
+	//render mask
+//	SGRenderMask* renderMask = new SGRenderMask(TheTexManager::Instance().get("maskalpha"));
+//	renderMask->setName("rendermask");
+//	TheSceneGraph::Instance().add(renderMask);
 
 	glutMainLoop();
 

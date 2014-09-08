@@ -23,6 +23,9 @@
 #include "ArcBallCamera.h"
 #include "SGNode.h"
 #include "SGHeaders.h"
+#include "graphics/SGBulletRigidMesh.h"
+#include "graphics/SGBulletRigidDynamics.h"
+
 
 using namespace Loki;
 using namespace std;
@@ -57,6 +60,7 @@ public:
 
     //Nodes
     U32 add(SGNode* aNode);
+    U32 addRigidBody(SGBulletRigidMesh* aRigidBody);
     U32 addSceneBox(const AABB& box);
     U32 addFloor(int rows, int cols, float step = 1.0f);
     bool remove(U32 index);
@@ -118,6 +122,7 @@ protected:
 private:
     int m_keyModifier;
 
+    SGBulletRigidDynamics* m_lpWorld;
 	CopyStack<mat44f> m_stkProjection;
 	CopyStack<mat44f> m_stkModelView;
 	std::vector<SGNode*> m_vSceneNodes;
