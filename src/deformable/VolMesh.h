@@ -85,9 +85,14 @@ public:
 
 	//Determinant
 	double computeCellDeterminant(U32 idxCell) const;
-	double computeCellVolume(U32 idxCell) const;
-	vec3d  computeCellCentroid(U32 idxCell) const;
 	static double ComputeCellDeterminant(const vec3d v[4]);
+
+	//Centroid
+	vec3d  computeCellCentroid(U32 idxCell) const;
+
+	//Volume
+	double computeTotalVolume() const;
+	double computeCellVolume(U32 idxCell) const;
 	static double ComputeCellVolume(const vec3d v[4]);
 
 	//Index control

@@ -62,6 +62,10 @@ void SGBulletSoftBodyCuttableMesh::sync() {
 	SGBulletSoftMesh* psb = dynamic_cast<SGBulletSoftMesh*>(this);
 	TheSceneGraph::Instance().getWorld()->removeSoftBody(psb);
 	SAFE_DELETE(m_lpSoftBody);
+
+
+
+
 	SGBulletSoftBodyCuttableMesh::setup(*this);
 	TheSceneGraph::Instance().getWorld()->addSoftBody(psb);
 	/*

@@ -128,7 +128,6 @@ void NormalKey(unsigned char key, int x, int y)
 
 	}
 
-
 	//Update Screen
 	glutPostRedisplay();
 }

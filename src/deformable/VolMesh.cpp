@@ -234,6 +234,13 @@ double VolMesh::computeCellDeterminant(U32 idxCell) const {
 	return ComputeCellDeterminant(v);
 }
 
+double VolMesh::computeTotalVolume() const {
+	double total = 0.0;
+	for(U32 i=0; i < countCells(); i++)
+		total += computeCellVolume(i);
+	return total;
+}
+
 double VolMesh::computeCellVolume(U32 idxCell) const {
 	vec3d v[4];
 	const CELL& cell = const_cellAt(idxCell);
