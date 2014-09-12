@@ -28,19 +28,21 @@ btSoftBody* SGBulletSoftBodyFromVolMesh::CreateFromVolMesh(
 
 		const CELL& cell = vmesh.const_cellAt(i);
 		psb->appendTetra(cell.nodes[0], cell.nodes[1], cell.nodes[2], cell.nodes[3]);
-
-		//tetralinks
-		for(int j=0; j < COUNT_CELL_EDGES; j++) {
-			const EDGE& edge = vmesh.const_edgeAt(cell.edges[j]);
-			psb->appendLink(edge.from, edge.to, 0, true);
-		}
-
-		for(int j=0; j < COUNT_CELL_FACES; j++) {
-			U32 fn[3];
-			vmesh.getFaceNodes(cell.faces[j], fn);
-			psb->appendFace(fn[0], fn[1], fn[2], 0);
-		}
 	}
+
+	//edges
+	for(U32 i=0; i < vmesh.countEdges(); i++) {
+		const EDGE& edge = vmesh.const_edgeAt(i);
+		psb->appendLink(edge.from, edge.to, 0, true);
+	}
+
+	//faces
+	for(U32 i=0; i < vmesh.countFaces(); i++) {
+		U32 fn[3];
+		vmesh.getFaceNodes(i, fn);
+		psb->appendFace(fn[0], fn[1], fn[2], 0);
+	}
+
 
 	printf("Nodes:  %u\r\n", psb->m_nodes.size());
 	printf("Links:  %u\r\n", psb->m_links.size());

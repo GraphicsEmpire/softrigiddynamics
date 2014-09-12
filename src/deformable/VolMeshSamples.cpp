@@ -38,17 +38,17 @@ VolMesh* VolMeshSamples::CreateOneTetra() {
 	return tet;
 }
 
-VolMesh* VolMeshSamples::CreateTwoTetra() {
+VolMesh* VolMeshSamples::CreateTwoTetra(const vec3d& origin) {
 	vector<double> vFlatVertices;
 	vector<U32> vFlatElements;
 
 	{
 		vector<vec3d> vertices;
-		vertices.push_back(vec3d(-1, 0, 0));
-		vertices.push_back(vec3d(1, 0, 0));
-		vertices.push_back(vec3d(0, 0, -1));
-		vertices.push_back(vec3d(0, 0, 1));
-		vertices.push_back(vec3d(0, 2, 0));
+		vertices.push_back(origin + vec3d(-1, 0, 0));
+		vertices.push_back(origin + vec3d(1, 0, 0));
+		vertices.push_back(origin + vec3d(0, 0, -1));
+		vertices.push_back(origin + vec3d(0, 0, 1));
+		vertices.push_back(origin + vec3d(0, 2, 0));
 		FlattenVec3<double>(vertices, vFlatVertices);
 	}
 

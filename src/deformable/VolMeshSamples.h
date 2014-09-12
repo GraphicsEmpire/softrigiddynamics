@@ -20,7 +20,7 @@ public:
 	VolMeshSamples() {}
 
 	static VolMesh* CreateOneTetra();
-	static VolMesh* CreateTwoTetra();
+	static VolMesh* CreateTwoTetra(const vec3d& origin = vec3d(0.0));
 	static VolMesh* CreateTruthCube(int nx, int ny, int nz, double cellsize);
 };
 

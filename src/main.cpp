@@ -15,14 +15,18 @@
 #include "graphics/selectgl.h"
 #include "graphics/SGRenderMask.h"
 #include "deformable/AvatarScalpel.h"
+#include "deformable/VolMeshSamples.h"
+#include "deformable/SGBulletSoftBodyCuttableMesh.h"
 
 using namespace PS;
 using namespace PS::SG;
+using namespace PS::MESH;
 using namespace PS::FILESTRINGUTILS;
 using namespace std;
 
 
 AvatarScalpel* g_lpScalpel = NULL;
+SGBulletSoftBodyCuttableMesh* g_lpTissue = NULL;
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -170,6 +174,20 @@ void SpecialKey(int key, int x, int y)
 			break;
 		}
 
+		case(GLUT_KEY_F7):
+		{
+			g_lpTissue->setFlagSplitMeshAfterCut(!g_lpTissue->getFlagSplitMeshAfterCut());
+			LogInfoArg1("Tissue splitting is set to: %d", g_lpTissue->getFlagSplitMeshAfterCut());
+			break;
+		}
+
+		case(GLUT_KEY_F8):
+		{
+			g_lpTissue->setFlagDrawSweepSurf(!g_lpTissue->getFlagDrawSweepSurf());
+			LogInfoArg1("Draw sweep surf is set to: %d", g_lpTissue->getFlagDrawSweepSurf());
+			break;
+		}
+
 	}
 
 	//Modifier
@@ -183,9 +201,14 @@ void closeApp() {
 
 }
 
+void finishedcut() {
+	LogInfoArg1("Finished cutting %d", g_lpTissue->countCompletedCuts());
+	g_lpTissue->printParts();
+	g_lpTissue->sync();
+}
 
 int main(int argc, char* argv[]) {
-	cout << "Cutting tets" << endl; // prints !!!Hello World!!!
+	cout << "Cutting tets" << endl;
 
 	//Initialize app
 	glutInit(&argc, argv);
@@ -254,6 +277,7 @@ int main(int argc, char* argv[]) {
 
 
 	//create rigid bodies
+	/*
 	Geometry g1;
 	g1.addCube(vec3f(0.0, 0.0, 0.0), 1.0);
 	g1.addPerVertexColor(vec4f(0, 0, 1, 1));
@@ -273,10 +297,22 @@ int main(int argc, char* argv[]) {
 			TheSceneGraph::Instance().addRigidBody(acube);
 		}
 	}
-
+	*/
 
 	//Add deformable object
+	VolMesh* pTwoTets = VolMeshSamples::CreateTwoTetra(vec3d(0, 6, 0));
+	g_lpTissue = new SGBulletSoftBodyCuttableMesh(*pTwoTets);
+	g_lpTissue->setFlagDrawSweepSurf(true);
+	g_lpTissue->setFlagSplitMeshAfterCut(true);
+	TheSceneGraph::Instance().addSoftBody(g_lpTissue);
+	SAFE_DELETE(pTwoTets);
 
+	//Scalpel
+	g_lpScalpel = new AvatarScalpel();
+	g_lpScalpel->setTissue(g_lpTissue);
+	g_lpScalpel->setOnCutEventHandler(finishedcut);
+	TheSceneGraph::Instance().add(g_lpScalpel);
+	TheGizmoManager::Instance().setFocusedNode(g_lpScalpel);
 
 	//render mask
 //	SGRenderMask* renderMask = new SGRenderMask(TheTexManager::Instance().get("maskalpha"));

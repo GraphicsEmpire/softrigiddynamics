@@ -75,7 +75,7 @@ public:
     SGNode* get(const char* name) const;
     SGNode* last() const;
 
-    const SGBulletSoftRigidDynamics* getWorld() { return m_lpWorld;}
+    SGBulletSoftRigidDynamics* getWorld() { return m_lpWorld;}
 
     //Matrix Stacks
 	CopyStack<mat44f>& stkProjection() {return m_stkProjection;}

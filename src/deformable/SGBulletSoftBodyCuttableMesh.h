@@ -24,7 +24,10 @@ public:
 
 	void draw();
 	void timestep();
+	void sync();
 
+protected:
+	bool setSBFromVolMesh(const VolMesh& vmesh);
 };
 
 }
