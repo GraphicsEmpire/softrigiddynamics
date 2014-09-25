@@ -28,6 +28,12 @@ public:
 	SGBulletSoftRigidDynamics();
 	virtual ~SGBulletSoftRigidDynamics();
 
+	void addRawRigidBody(btRigidBody* pRigidBody);
+	void removeRawRigidBody(btRigidBody* pRigidBody);
+
+	void addRawSoftBody(btSoftBody* pSoftBody);
+	void removeRawSoftBody(btSoftBody* pSoftBody);
+
 	bool addRigidBody(SGBulletRigidMesh* pMesh);
 	bool removeRigidBody(SGBulletRigidMesh* pMesh);
 

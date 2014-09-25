@@ -116,6 +116,8 @@ public:
     void addCube(const vec3f& lower, const vec3f& upper);
     void addCube(const vec3f& center, float side);
     void addSphere(float radius = 1.0f, int hseg = 8, int vseg = 8);
+    void addCylinder(float radius, float height, int sectors, bool base = true, bool roof = true);
+
     void addTetrahedra(vec3f v[4]);
     void addTetrahedra(const vector<float>& vertices, const vector<U32>& tets);
 
@@ -123,13 +125,12 @@ public:
     /*!
      * Add a ring to the geometry
      */
-    bool addRing(int sectors,
-                 int xsections,
-                 float innerRadius,
-                 float outerRadius,
-                 const vec3f& o = vec3f(0,0,0));
- 
-    /*!
+	bool addRingStripAroundXAxis(int sectors,
+								 float radius,
+								 float thickness,
+								 const vec3f& origin);
+
+	/*!
      * Add a disc to the geometry
      */
     bool addDisc(int sectors,

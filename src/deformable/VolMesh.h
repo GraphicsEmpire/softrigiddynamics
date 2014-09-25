@@ -9,7 +9,6 @@
 #define VOLMESH_H
 
 #include "graphics/SGNode.h"
-#include "graphics/Geometry.h"
 #include "VolMeshEntities.h"
 #include <functional>
 #include <set>
@@ -24,7 +23,6 @@
 */
 using namespace PS;
 using namespace PS::SG;
-using namespace PS::GL;
 using namespace std;
 
 
@@ -85,14 +83,16 @@ public:
 
 	//Determinant
 	double computeCellDeterminant(U32 idxCell) const;
-	static double ComputeCellDeterminant(const vec3d v[4]);
-
-	//Centroid
+	double computeCellVolume(U32 idxCell) const;
 	vec3d  computeCellCentroid(U32 idxCell) const;
 
-	//Volume
-	double computeTotalVolume() const;
-	double computeCellVolume(U32 idxCell) const;
+
+	double computeAspectRatio(U32 idxCell) const;
+	double computeInscribedRadius(U32 idxCell) const;
+	double computeCircumscribedRadius(U32 idxCell) const ;
+
+	static double ComputeCircumscribedRadius(const vec3d v[4]);
+	static double ComputeCellDeterminant(const vec3d v[4]);
 	static double ComputeCellVolume(const vec3d v[4]);
 
 	//Index control
@@ -122,6 +122,9 @@ public:
 	inline U32 countNodes() const {return m_vNodes.size();}
 
 	//edge-wise funcs
+	bool edge_exists(U32 from, U32 to);
+	U32 edge_handle(U32 from, U32 to);
+
 	U32 edge_from_node(U32 idxEdge) const;
 	U32 edge_to_node(U32 idxEdge) const;
 
@@ -195,9 +198,6 @@ public:
 	void setNodeToShow(U32 idxNode = INVALID_INDEX);
 	U32 getNodeToShow() const {return m_nodeToShow;}
 
-	//export
-	bool exportGeometry(Geometry& g) const;
-
 	//draw
 	void draw();
 	void drawElement(U32 i) const;
@@ -211,15 +211,14 @@ public:
 
 	bool verbose() const { return m_verbose;}
 	void setVerbose(bool b) { m_verbose = b;}
-private:
+
+protected:
 	void init();
 	inline bool insertEdgeIndexToMap(U32 from, U32 to, U32 idxEdge);
 	inline bool removeEdgeIndexFromMap(U32 from, U32 to);
 
 
 	inline EdgeKey computeEdgeKey(U32 idxEdge) const;
-	inline bool edge_exists(U32 from, U32 to);
-	U32 edge_handle(U32 from, U32 to);
 
 	inline bool face_exists_by_edges(U32 edges[3]) const;
 	inline bool face_exists_by_nodes(U32 nodes[3]);

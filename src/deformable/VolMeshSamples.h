@@ -20,8 +20,9 @@ public:
 	VolMeshSamples() {}
 
 	static VolMesh* CreateOneTetra();
-	static VolMesh* CreateTwoTetra(const vec3d& origin = vec3d(0.0));
+	static VolMesh* CreateTwoTetra();
 	static VolMesh* CreateTruthCube(int nx, int ny, int nz, double cellsize);
+	static VolMesh* CreateEggShell(int hseg = 8, int vseg = 8, double radius = 2.0, double shelltickness = 0.3);
 };
 
 }

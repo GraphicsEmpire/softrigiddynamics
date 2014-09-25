@@ -11,9 +11,11 @@
 #include <base/String.h>
 #include <base/StringBase.h>
 #include <base/Vec.h>
+#include <base/Color.h>
 #include "base/DebugUtils.h"
 #include <deformable/VolMesh.h>
 #include <graphics/AABB.h>
+#include <graphics/SceneGraph.h>
 
 #include "graphics/selectgl.h"
 #include <algorithm>
@@ -141,7 +143,7 @@ bool VolMesh::setup(U32 ctVertices, const double* vertices, U32 ctElements, cons
 	//Compute AABB
 	computeAABB();
 	//checkMeshFaceDirections();
-	this->printInfo();
+	//this->printInfo();
 
 	return true;
 }
@@ -234,13 +236,6 @@ double VolMesh::computeCellDeterminant(U32 idxCell) const {
 	return ComputeCellDeterminant(v);
 }
 
-double VolMesh::computeTotalVolume() const {
-	double total = 0.0;
-	for(U32 i=0; i < countCells(); i++)
-		total += computeCellVolume(i);
-	return total;
-}
-
 double VolMesh::computeCellVolume(U32 idxCell) const {
 	vec3d v[4];
 	const CELL& cell = const_cellAt(idxCell);
@@ -256,6 +251,111 @@ vec3d VolMesh::computeCellCentroid(U32 idxCell) const {
 		v[i] = const_nodeAt(cell.nodes[i]).pos;
 
 	return (v[0] + v[1] + v[2] + v[3]) * 0.25;
+}
+
+double VolMesh::computeAspectRatio(U32 idxCell) const {
+	double IR = computeInscribedRadius(idxCell);
+	double CR = computeCircumscribedRadius(idxCell);
+	return CR / (3.0 * IR);
+}
+
+double VolMesh::computeInscribedRadius(U32 idxCell) const {
+
+	U32 n[3];
+	vec3d np[3];
+
+	//fetch cell
+	const CELL& cell = const_cellAt(idxCell);
+
+	double sumsa = 0.0;
+	for(int i=0; i < COUNT_CELL_FACES; i++) {
+		getFaceNodes(cell.faces[i], n);
+
+		//fetch face nodes
+		for(int j=0; j < 3; j++)
+			np[j] = const_nodeAt(n[j]).pos;
+
+		vec3d crs = vec3d::cross(np[1] - np[0], np[2] - np[0]);
+		sumsa += 0.5 * crs.length();
+	}
+
+	return 	(4.0 * computeCellVolume(idxCell)) / (4.0 * sumsa);
+}
+
+double VolMesh::computeCircumscribedRadius(U32 idxCell) const {
+	vec3d v[4];
+	const CELL& cell = const_cellAt(idxCell);
+	for(int i=0; i<4; i++)
+		v[i] = const_nodeAt(cell.nodes[i]).pos;
+	return ComputeCircumscribedRadius(v);
+}
+
+double VolMesh::ComputeCircumscribedRadius(const vec3d v[4]) {
+
+	vec4d one(1.0);
+	vec4d len2;
+	for(int i=0;i < 4; i++)
+		len2[i] = v[i].length2();
+
+	//columns
+	vec4d cx = vec4d(v[0].x, v[1].x, v[2].x, v[3].x);
+	vec4d cy = vec4d(v[0].y, v[1].y, v[2].y, v[3].y);
+	vec4d cz = vec4d(v[0].z, v[1].z, v[2].z, v[3].z);
+
+	double dx, dy, dz, a, c;
+
+	//mdx
+	{
+		mat44d mdx;
+		mdx.setCol(0, len2);
+		mdx.setCol(1, cy);
+		mdx.setCol(2, cz);
+		mdx.setCol(3, one);
+		dx = mdx.determinant();
+	}
+
+	//mdy
+	{
+		mat44d mdy;
+		mdy.setCol(0, len2);
+		mdy.setCol(1, cx);
+		mdy.setCol(2, cz);
+		mdy.setCol(3, one);
+		dy = -1.0 * mdy.determinant();
+	}
+
+	//mdz
+	{
+		mat44d mdz;
+		mdz.setCol(0, len2);
+		mdz.setCol(1, cx);
+		mdz.setCol(2, cy);
+		mdz.setCol(3, one);
+		dz = mdz.determinant();
+	}
+
+	//a
+	{
+		mat44d mda;
+		mda.setCol(0, cx);
+		mda.setCol(1, cy);
+		mda.setCol(2, cz);
+		mda.setCol(3, one);
+		a = mda.determinant();
+	}
+
+	//c
+	{
+		mat44d mdc;
+		mdc.setCol(0, len2);
+		mdc.setCol(1, cx);
+		mdc.setCol(2, cy);
+		mdc.setCol(3, cz);
+		c = mdc.determinant();
+	}
+
+	double CR = sqrt(dx*dx + dy*dy + dz*dz - 4*a*c) / 2.0 * Absoluted(a);
+	return CR;
 }
 
 double VolMesh::ComputeCellDeterminant(const vec3d v[4]) {
@@ -827,7 +927,7 @@ void VolMesh::printParts() {
 
 	for(U32 i=0; i < parts.size(); i++) {
 		vector<U32> part = parts[i];
-		printf("part [%u] = ", i);
+		printf("part [%u] #ofcells = %u, cells = ", i, (U32)part.size());
 		for(U32 j=0; j < part.size(); j++ )
 			printf("%u, ", part[j]);
 		printf("\n");
@@ -974,7 +1074,7 @@ U32 VolMesh::insert_face(U32 nodes[3]) {
 
 	//since we do not have that face we will add it
 	FACE face;
-	U32 from, to = BaseHandle::INVALID;
+	U32 from, to = BaseLink::INVALID;
 
 	//Add all edges
 	for (int e = 0; e < 3; e++) {
@@ -990,7 +1090,7 @@ U32 VolMesh::insert_face(U32 nodes[3]) {
 			LogErrorArg2("Setting face edges failed! Unable to find edge <%d, %d>",
 						 from, to);
 
-			return BaseHandle::INVALID;
+			return BaseLink::INVALID;
 		}
 	}
 
@@ -1370,7 +1470,7 @@ int VolMesh::get_incident_edges(const ContainerT& in_nodes, set<U32>& out_edges)
 	for(typename ContainerT::const_iterator n_it = in_nodes.begin(),
 	            n_end = in_nodes.end(); n_it != n_end; ++n_it) {
 
-		vTempEdges.assign(m_incident_edges_per_node[*n_it].begin(), m_incident_faces_per_edge[*n_it].end());
+		vTempEdges.assign(m_incident_edges_per_node[*n_it].begin(), m_incident_edges_per_node[*n_it].end());
 		for(U32 j=0; j < vTempEdges.size(); j++) {
 			U32 idxEdge = vTempEdges[j];
 			if(isNodeIndex(idxEdge))
@@ -1392,10 +1492,12 @@ void VolMesh::remove_cells(const ContainerT& cells) {
 	std::sort(vToBeRemoved.begin(), vToBeRemoved.end(), std::greater<U32>());
 
 	//print order
+	/*
 	printf("cells remove order: ");
 	for(std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++)
 		printf("%u, ", *it);
 	printf("\n");
+	*/
 
 	for(std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++) {
 		remove_cell(*it);
@@ -1413,10 +1515,12 @@ void VolMesh::remove_faces(const ContainerT& faces) {
 	std::sort(vToBeRemoved.begin(), vToBeRemoved.end(), std::greater<U32>());
 
 	//print order
+	/*
 	printf("faces remove order: ");
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++)
 		printf("%u, ", *it);
 	printf("\n");
+	*/
 
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++) {
 		remove_face(*it);
@@ -1435,10 +1539,12 @@ void VolMesh::remove_edges(const ContainerT& edges) {
 	std::sort(vToBeRemoved.begin(), vToBeRemoved.end(), std::greater<U32>());
 
 	//print order
+	/*
 	printf("edges remove order: ");
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++)
 		printf("%u, ", *it);
 	printf("\n");
+	*/
 
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++) {
 		remove_edge(*it);
@@ -1456,10 +1562,12 @@ void VolMesh::remove_nodes(const ContainerT& nodes) {
 	std::sort(vToBeRemoved.begin(), vToBeRemoved.end(), std::greater<U32>());
 
 	//print order
+	/*
 	printf("nodes remove order: ");
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++)
 		printf("%u, ", *it);
 	printf("\n");
+	*/
 
 	for (std::vector<U32>::const_iterator it = vToBeRemoved.begin(); it != vToBeRemoved.end(); it++) {
 		remove_node(*it);
@@ -1581,51 +1689,13 @@ void VolMesh::setNodeToShow(U32 idxNode) {
 	m_nodeToShow = idxNode;
 }
 
-bool VolMesh::exportGeometry(Geometry& g) const {
-
-	if(countNodes() == 0)
-		return false;
-
-	vector<float> vertices;
-	vertices.reserve(countNodes() * 3);
-	for(U32 i=0; i < countNodes(); i++) {
-		const NODE& node = const_nodeAt(i);
-		vec3f pos = vec3f(node.pos.x, node.pos.y, node.pos.z);
-		vertices.push_back(pos.x);
-		vertices.push_back(pos.y);
-		vertices.push_back(pos.z);
-	}
-
-	vector<U32> triangles;
-	triangles.reserve(countCells() * 4 * 3);
-	for(U32 i=0; i < countCells(); i++) {
-		const CELL& cell = const_cellAt(i);
-		U32 tri[3];
-		for(U32 j=0; j < COUNT_CELL_FACES; j++) {
-			//const FACE& face = const_faceAt(cell.faces[j]);
-			getFaceNodes(cell.faces[j], tri);
-
-			//triangles
-			triangles.push_back(tri[0]);
-			triangles.push_back(tri[1]);
-			triangles.push_back(tri[2]);
-		}
-
-	}
-
-	g.init(3, 4, 2, ftTriangles);
-	g.addVertexAttribs(vertices, 3, mbtPosition);
-	g.addFaceIndices(triangles, ftTriangles);
-
-	return true;
-}
 
 void VolMesh::draw() {
 	glPushAttrib(GL_ALL_ATTRIB_BITS);
-	glDisable(GL_LIGHTING);
+	//glDisable(GL_LIGHTING);
 
 	const U8 ctColors = 7;
-	vec3d colors[ctColors] = {vec3d(0.5, 0.5, 0.5), vec3d(1, 0.3, 0), vec3d(0.3, 1, 0), vec3d(0, 0.3, 1),
+	vec3d colors[ctColors] = {vec3d(0.7, 0.7, 0.7), vec3d(1, 0.3, 0), vec3d(0.3, 1, 0), vec3d(0, 0.3, 1),
 					   	   	   vec3d(1, 1, 0), vec3d(0.5, 0.5, 0.5), vec3d(0, 1, 1)};
 
 	//Draw filled faces
@@ -1637,9 +1707,10 @@ void VolMesh::draw() {
 		drawElement(m_elemToShow);
 	}
 	else {
+		glColor3fv(Color::skin().toVec4f().cptr());
 		for(U32 i=0; i< countCells(); i++)
 		{
-			glColor3dv(colors[i % ctColors].cptr());
+			//glColor3dv(colors[i % ctColors].cptr());
 			drawElement(i);
 		}
 	}
@@ -1695,7 +1766,7 @@ void VolMesh::draw() {
 
 	}
 
-	glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHTING);
 	glPopAttrib();
 }
 
@@ -1715,6 +1786,20 @@ void VolMesh::drawElement(U32 i) const {
 			vec3d p1 = const_nodeAt(nodes[1]).pos;
 			vec3d p2 = const_nodeAt(nodes[2]).pos;
 
+			vec3d n = vec3d::cross(p1 - p0, p2 - p0).normalized();
+			vec3f cp = TheSceneGraph::Instance().camera().getPos();
+			vec3d cpd = vec3d(cp.x, cp.y, cp.z);
+			vec3d cd = (cpd - p0).normalized();
+
+			if(vec3d::dot(cd, n) < 0) {
+				n = n * -1.0;
+				vec3d temp = p0;
+				p0 = p2;
+				p2 = temp;
+			}
+
+			//to gl
+			glNormal3dv(n.cptr());
 			glVertex3dv(p0.cptr());
 			glVertex3dv(p1.cptr());
 			glVertex3dv(p2.cptr());

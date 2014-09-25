@@ -15,8 +15,10 @@
 #include "graphics/selectgl.h"
 #include "graphics/SGRenderMask.h"
 #include "deformable/AvatarScalpel.h"
+#include "deformable/AvatarRing.h"
 #include "deformable/VolMeshSamples.h"
 #include "deformable/SGBulletSoftBodyCuttableMesh.h"
+#include "deformable/SGBulletRigidBodyCuttableMesh.h"
 
 using namespace PS;
 using namespace PS::SG;
@@ -25,8 +27,8 @@ using namespace PS::FILESTRINGUTILS;
 using namespace std;
 
 
-AvatarScalpel* g_lpScalpel = NULL;
-SGBulletSoftBodyCuttableMesh* g_lpTissue = NULL;
+AvatarRing* g_lpAvatar = NULL;
+SGBulletRigidBodyCuttableMesh* g_lpTissue = NULL;
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -182,8 +184,24 @@ void SpecialKey(int key, int x, int y)
 
 		case(GLUT_KEY_F8):
 		{
-			g_lpTissue->setFlagDrawSweepSurf(!g_lpTissue->getFlagDrawSweepSurf());
-			LogInfoArg1("Draw sweep surf is set to: %d", g_lpTissue->getFlagDrawSweepSurf());
+			bool flag = !TheSceneGraph::Instance().get("floor")->isVisible();
+			TheSceneGraph::Instance().get("floor")->setVisible(flag);
+			LogInfoArg1("Set floor to %s", flag ? "show" : "hide");
+			break;
+		}
+
+		case(GLUT_KEY_F9):
+		{
+			bool flag = !TheGizmoManager::Instance().isVisible();
+			TheGizmoManager::Instance().setVisible(flag);
+			LogInfoArg1("Set gizmos to %s", flag ? "show" : "hide");
+			break;
+		}
+
+		case(GLUT_KEY_F11):
+		{
+			g_lpAvatar->grip();
+			LogInfo("gripped avatar!");
 			break;
 		}
 
@@ -201,9 +219,49 @@ void closeApp() {
 }
 
 void finishedcut() {
+	if(g_lpTissue == NULL)
+		return;
+
 	LogInfoArg1("Finished cutting %d", g_lpTissue->countCompletedCuts());
-	g_lpTissue->printParts();
-	g_lpTissue->sync();
+
+//	if(!g_parser.value<int>("disjoint"))
+//		return;
+
+
+	vector<CuttableMesh*> vMeshes;
+	g_lpTissue->convertDisjointPartsToMeshes(vMeshes);
+
+	if(vMeshes.size() == 0)
+		return;
+
+	U32 ctMaxCells = 0;
+	U32 idxMaxCell = 0;
+
+	vector<SGBulletRigidBodyCuttableMesh*> vPhysicsMeshes;
+	vPhysicsMeshes.reserve(vMeshes.size());
+	for(U32 i=0; i < vMeshes.size(); i++) {
+		vMeshes[i]->computeAABB();
+
+		SGBulletRigidBodyCuttableMesh* a = new SGBulletRigidBodyCuttableMesh(*vMeshes[i], vMeshes[i]->countNodes());
+		a->setFlagDrawSweepSurf(true);
+		a->setFlagSplitMeshAfterCut(true);
+
+		TheSceneGraph::Instance().world()->addRawRigidBody(a->getB3RigidBody());
+		TheSceneGraph::Instance().add(a);
+		vPhysicsMeshes.push_back(a);
+
+		if(a->countCells() > ctMaxCells) {
+			ctMaxCells = a->countCells();
+			idxMaxCell = i;
+		}
+
+		SAFE_DELETE(vMeshes[i]);
+	}
+	vMeshes.clear();
+
+	g_lpTissue = vPhysicsMeshes[idxMaxCell];
+	if(g_lpAvatar)
+		g_lpAvatar->setTissue(g_lpTissue);
 }
 
 int main(int argc, char* argv[]) {
@@ -244,6 +302,7 @@ int main(int argc, char* argv[]) {
 	TheTexManager::Instance().add(strTextureRoot + "rendermask.png");
 	TheTexManager::Instance().add(strTextureRoot + "maskalpha.png");
 	TheTexManager::Instance().add(strTextureRoot + "maskalphafilled.png");
+	TheTexManager::Instance().add(strTextureRoot + "spin.png");
 
 	//Ground and Room
 	//TheSceneGraph::Instance().addFloor(32, 32, 0.5f);
@@ -299,19 +358,31 @@ int main(int argc, char* argv[]) {
 	*/
 
 	//Add deformable object
-	VolMesh* pTwoTets = VolMeshSamples::CreateTwoTetra(vec3d(0, 6, 0));
-	g_lpTissue = new SGBulletSoftBodyCuttableMesh(*pTwoTets);
+	VolMesh* pVolMesh = VolMeshSamples::CreateEggShell(16, 16, 2.0f, 0.4f);
+	//VolMesh* pVolMesh = VolMeshSamples::CreateTruthCube(10, 10, 10, 0.1);
+	for(U32 i=0; i < pVolMesh->countNodes(); i++) {
+		NODE& n = pVolMesh->nodeAt(i);
+		n.pos = n.pos + vec3d(0, 2, 0);
+		n.restpos = n.restpos + vec3d(0, 2, 0);
+	}
+
+
+	g_lpTissue = new SGBulletRigidBodyCuttableMesh(*pVolMesh, pVolMesh->countNodes());
 	g_lpTissue->setFlagDrawSweepSurf(true);
 	g_lpTissue->setFlagSplitMeshAfterCut(true);
-	TheSceneGraph::Instance().addSoftBody(g_lpTissue);
-	SAFE_DELETE(pTwoTets);
+	//g_lpTissue->transform()->setTranslate(vec3f(0.0f, 6.0f, 0.0f));
+
+	TheSceneGraph::Instance().world()->addRawRigidBody(g_lpTissue->getB3RigidBody());
+	TheSceneGraph::Instance().add(g_lpTissue);
+	SAFE_DELETE(pVolMesh);
 
 	//Scalpel
-	g_lpScalpel = new AvatarScalpel();
-	g_lpScalpel->setTissue(g_lpTissue);
-	g_lpScalpel->setOnCutEventHandler(finishedcut);
-	TheSceneGraph::Instance().add(g_lpScalpel);
-	TheGizmoManager::Instance().setFocusedNode(g_lpScalpel);
+	g_lpAvatar = new AvatarRing(TheTexManager::Instance().get("spin"));
+	g_lpAvatar->setTissue(g_lpTissue);
+	g_lpAvatar->setOnCutFinishedEventHandler(finishedcut);
+	TheSceneGraph::Instance().add(g_lpAvatar);
+	TheGizmoManager::Instance().setFocusedNode(g_lpAvatar);
+	TheGizmoManager::Instance().cmdTranslate(vec3f(0,5,0));
 
 	//render mask
 //	SGRenderMask* renderMask = new SGRenderMask(TheTexManager::Instance().get("maskalpha"));

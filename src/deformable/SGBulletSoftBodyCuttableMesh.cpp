@@ -21,15 +21,23 @@ SGBulletSoftBodyCuttableMesh::~SGBulletSoftBodyCuttableMesh() {
 
 void SGBulletSoftBodyCuttableMesh::setup(const VolMesh& volmesh) {
 
-	const SGBulletSoftRigidDynamics* pw = TheSceneGraph::Instance().getWorld();
+	const SGBulletSoftRigidDynamics* pw = TheSceneGraph::Instance().world();
 
 	btSoftBody* psb = SGBulletSoftBodyFromVolMesh::CreateFromVolMesh(const_cast<btSoftBodyWorldInfo&>(pw->getSoftBodyWorldInfo()), volmesh);
-	psb->m_materials[0]->m_kLST	= 0.45;
-	psb->m_cfg.kVC				= 20;
-	psb->setTotalMass(50, true);
+	psb->m_materials[0]->m_kLST	= 1.0;
+	psb->m_materials[0]->m_kAST	= 1.0;
+	psb->m_materials[0]->m_kVST	= 1.0;
+	//psb->m_materials[0]->m_kLST	= 0.45;
+	psb->m_cfg.kVC	= 10000;
+	psb->m_cfg.kDF	= 1.0;
+	psb->setTotalMass(volmesh.countNodes(), true);
 	psb->setPose(true, false);
 
-	SGBulletSoftMesh::setup(psb, 50.0f);
+	setup(psb, 50.0f);
+}
+
+void SGBulletSoftBodyCuttableMesh::setup(const btSoftBody* pBody, float mass) {
+	m_lpSoftBody = const_cast<btSoftBody*>(pBody);
 }
 
 
@@ -60,14 +68,14 @@ void SGBulletSoftBodyCuttableMesh::timestep() {
 void SGBulletSoftBodyCuttableMesh::sync() {
 
 	SGBulletSoftMesh* psb = dynamic_cast<SGBulletSoftMesh*>(this);
-	TheSceneGraph::Instance().getWorld()->removeSoftBody(psb);
+	TheSceneGraph::Instance().world()->removeSoftBody(psb);
 	SAFE_DELETE(m_lpSoftBody);
 
 
 
 
 	SGBulletSoftBodyCuttableMesh::setup(*this);
-	TheSceneGraph::Instance().getWorld()->addSoftBody(psb);
+	TheSceneGraph::Instance().world()->addSoftBody(psb);
 	/*
 	vector<vector<U32>> parts;
 	VolMesh::get_disjoint_parts(parts);

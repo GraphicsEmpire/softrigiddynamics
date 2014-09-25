@@ -9,14 +9,15 @@
 #define SGBULLETSOFTBODYCUTTABLEMESH_H_
 
 #include "CuttableMesh.h"
-#include "graphics/SGBulletSoftMesh.h"
+#include <btBulletDynamicsCommon.h>
+#include "BulletSoftBody/btSoftBody.h"
 
 using namespace PS::MESH;
 
 namespace PS {
 namespace SG {
 
-class SGBulletSoftBodyCuttableMesh : public CuttableMesh, public SGBulletSoftMesh {
+class SGBulletSoftBodyCuttableMesh : public CuttableMesh {
 public:
 	SGBulletSoftBodyCuttableMesh(const VolMesh& volmesh);
 	virtual ~SGBulletSoftBodyCuttableMesh();
@@ -26,8 +27,13 @@ public:
 	void timestep();
 	void sync();
 
+	btSoftBody* getB3SoftBody() const {return m_lpSoftBody;}
 protected:
 	bool setSBFromVolMesh(const VolMesh& vmesh);
+	virtual void setup(const btSoftBody* pBody, float mass = 1.0f);
+
+protected:
+	btSoftBody* m_lpSoftBody;
 };
 
 }

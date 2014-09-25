@@ -75,11 +75,28 @@ void SGBulletSoftRigidDynamics::timestep() {
 
 }
 
+void SGBulletSoftRigidDynamics::addRawRigidBody(btRigidBody* pRigidBody) {
+	m_lpDynamicsWorld->addRigidBody(pRigidBody);
+}
+
+void SGBulletSoftRigidDynamics::removeRawRigidBody(btRigidBody* pRigidBody) {
+	m_lpDynamicsWorld->removeRigidBody(pRigidBody);
+}
+
+void SGBulletSoftRigidDynamics::addRawSoftBody(btSoftBody* pSoftBody) {
+	m_lpDynamicsWorld->addSoftBody(pSoftBody);
+}
+
+void SGBulletSoftRigidDynamics::removeRawSoftBody(btSoftBody* pSoftBody) {
+	m_lpDynamicsWorld->removeSoftBody(pSoftBody);
+}
+
+
 bool SGBulletSoftRigidDynamics::addRigidBody(SGBulletRigidMesh* pMesh) {
 	if(pMesh == NULL)
 		return false;
 
-	m_lpDynamicsWorld->addRigidBody(pMesh->getB3RigidBody());
+	addRawRigidBody(pMesh->getB3RigidBody());
 	return true;
 }
 
@@ -87,7 +104,7 @@ bool SGBulletSoftRigidDynamics::removeRigidBody(SGBulletRigidMesh* pMesh) {
 	if(pMesh == NULL)
 		return false;
 
-	m_lpDynamicsWorld->removeRigidBody(pMesh->getB3RigidBody());
+	removeRawRigidBody(pMesh->getB3RigidBody());
 	return true;
 }
 
@@ -95,7 +112,7 @@ bool SGBulletSoftRigidDynamics::addSoftBody(SGBulletSoftMesh* pMesh) {
 	if(pMesh == NULL)
 		return false;
 
-	m_lpDynamicsWorld->addSoftBody(pMesh->getB3SoftBody());
+	addRawSoftBody(pMesh->getB3SoftBody());
 	return true;
 }
 
@@ -103,7 +120,7 @@ bool SGBulletSoftRigidDynamics::removeSoftBody(SGBulletSoftMesh* pMesh) {
 	if(pMesh == NULL)
 		return false;
 
-	m_lpDynamicsWorld->removeSoftBody(pMesh->getB3SoftBody());
+	removeRawSoftBody(pMesh->getB3SoftBody());
 	return true;
 }
 
