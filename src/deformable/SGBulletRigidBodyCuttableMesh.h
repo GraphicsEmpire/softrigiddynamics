@@ -29,7 +29,6 @@ public:
 	void draw();
 	void timestep();
 protected:
-	void init();
 	void cleanup();
 
 

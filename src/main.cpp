@@ -9,6 +9,7 @@
 #include <iostream>
 #include "base/FileDirectory.h"
 #include "base/Logger.h"
+#include "base/CmdLineParser.h"
 #include "graphics/SceneGraph.h"
 #include "graphics/Gizmo.h"
 #include "graphics/AppScreen.h"
@@ -17,6 +18,7 @@
 #include "deformable/AvatarScalpel.h"
 #include "deformable/AvatarRing.h"
 #include "deformable/VolMeshSamples.h"
+#include "deformable/VolMeshIO.h"
 #include "deformable/SGBulletSoftBodyCuttableMesh.h"
 #include "deformable/SGBulletRigidBodyCuttableMesh.h"
 
@@ -27,8 +29,13 @@ using namespace PS::FILESTRINGUTILS;
 using namespace std;
 
 
-AvatarRing* g_lpAvatar = NULL;
+IAvatar* g_lpAvatar = NULL;
 SGBulletRigidBodyCuttableMesh* g_lpTissue = NULL;
+CmdLineParser g_parser;
+AnsiStr g_strFilePath;
+
+
+void resetMesh();
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -77,6 +84,13 @@ void NormalKey(unsigned char key, int x, int y)
 {
 	switch(key)
 	{
+	case ('/'): {
+		g_lpTissue->setFlagDrawSweepSurf(!g_lpTissue->getFlagDrawSweepSurf());
+		LogInfoArg1("Draw sweep surf set to: %d",
+				g_lpTissue->getFlagDrawSweepSurf());
+	}
+	break;
+
 	case('g'):{
 		TheGizmoManager::Instance().setType(gtTranslate);
 	}
@@ -138,6 +152,12 @@ void SpecialKey(int key, int x, int y)
 {
 	switch(key)
 	{
+		case(GLUT_KEY_F3):
+		{
+			resetMesh();
+			break;
+		}
+
 		case(GLUT_KEY_F4):
 		{
 			//Set UIAxis
@@ -198,6 +218,14 @@ void SpecialKey(int key, int x, int y)
 			break;
 		}
 
+		case(GLUT_KEY_F10):
+		{
+			bool flag = !TheSceneGraph::Instance().get("headers")->isVisible();
+			TheSceneGraph::Instance().get("headers")->setVisible(flag);
+			LogInfoArg1("Set headers to %s", flag ? "show" : "hide");
+			break;
+		}
+
 		case(GLUT_KEY_F11):
 		{
 			g_lpAvatar->grip();
@@ -215,19 +243,21 @@ void SpecialKey(int key, int x, int y)
 
 
 void closeApp() {
-
+	LogInfo("store gizmo config and close the app");
+	TheGizmoManager::Instance().writeConfig();
+	SAFE_DELETE(g_lpAvatar);
+	SAFE_DELETE(g_lpTissue);
 }
 
 void finishedcut() {
 	if(g_lpTissue == NULL)
 		return;
 
+	g_lpTissue->clearCutContext();
 	LogInfoArg1("Finished cutting %d", g_lpTissue->countCompletedCuts());
 
-//	if(!g_parser.value<int>("disjoint"))
-//		return;
 
-
+	//count disjoint parts
 	vector<CuttableMesh*> vMeshes;
 	g_lpTissue->convertDisjointPartsToMeshes(vMeshes);
 
@@ -243,9 +273,14 @@ void finishedcut() {
 		vMeshes[i]->computeAABB();
 
 		SGBulletRigidBodyCuttableMesh* a = new SGBulletRigidBodyCuttableMesh(*vMeshes[i], vMeshes[i]->countNodes());
-		a->setFlagDrawSweepSurf(true);
-		a->setFlagSplitMeshAfterCut(true);
+		a->setFlagDrawSweepSurf(g_lpTissue->getFlagDrawSweepSurf());
+		a->setFlagSplitMeshAfterCut(g_lpTissue->getFlagSplitMeshAfterCut());
+		a->setFlagDrawAABB(g_lpTissue->getFlagDrawAABB());
+		a->setDrawNodes(g_lpTissue->getDrawNodes());
+		a->setDrawWireFrame(g_lpTissue->getDrawWireFrame());
+		a->setAnimate(true);
 
+		//
 		TheSceneGraph::Instance().world()->addRawRigidBody(a->getB3RigidBody());
 		TheSceneGraph::Instance().add(a);
 		vPhysicsMeshes.push_back(a);
@@ -262,10 +297,89 @@ void finishedcut() {
 	g_lpTissue = vPhysicsMeshes[idxMaxCell];
 	if(g_lpAvatar)
 		g_lpAvatar->setTissue(g_lpTissue);
+
+	LogInfoArg2("Selected tissue is now mesh %u with %u cells.", idxMaxCell, g_lpTissue->countCells());
+}
+
+void resetMesh() {
+	//remove it from scenegraph
+	if(g_lpTissue) {
+		TheSceneGraph::Instance().world()->removeRawRigidBody(g_lpTissue->getB3RigidBody());
+		TheSceneGraph::Instance().remove(g_lpTissue);
+		SAFE_DELETE(g_lpTissue);
+	}
+
+	VolMesh* temp = NULL;
+	if(FileExists(g_strFilePath)) {
+		temp = new PS::MESH::VolMesh();
+		LogInfoArg1("Begin to read vega file from: %s", g_strFilePath.cptr());
+		bool res = PS::MESH::VolMeshIO::readVega(temp, g_strFilePath);
+		if(!res)
+			LogErrorArg1("Unable to load mesh from: %s", g_strFilePath.cptr());
+	}
+	else {
+		AnsiStr strExample = g_parser.value<AnsiStr>("example");
+		int pos = -1;
+		if(strExample == "one")
+			temp = PS::MESH::VolMeshSamples::CreateOneTetra();
+		else if(strExample == "two")
+			temp = PS::MESH::VolMeshSamples::CreateTwoTetra();
+		else if(strExample.lfindstr(AnsiStr("cube"), pos)) {
+
+			U32 nx, ny, nz = 0;
+			sscanf(strExample.cptr(), "cube_%u_%u_%u", &nx, &ny, &nz);
+			temp = PS::MESH::VolMeshSamples::CreateTruthCube(nx, ny, nz, 0.2);
+		}
+		else if(strExample.lfindstr(AnsiStr("eggshell"), pos)) {
+
+			U32 nx, ny;
+			//float radius, thickness;
+			sscanf(strExample.cptr(), "eggshell_%u_%u", &nx, &ny);
+			temp = PS::MESH::VolMeshSamples::CreateEggShell(nx, ny);
+		}
+		else
+			temp = PS::MESH::VolMeshSamples::CreateOneTetra();
+	}
+
+
+	LogInfo("Loaded mesh to temp");
+	g_lpTissue = new SGBulletRigidBodyCuttableMesh(*temp, temp->countNodes());
+	g_lpTissue->setFlagDrawSweepSurf(false);
+	g_lpTissue->setDrawNodes(false);
+	g_lpTissue->setDrawWireFrame(false);
+	g_lpTissue->setFlagSplitMeshAfterCut(false);
+	g_lpTissue->setFlagDrawAABB(false);
+	TheSceneGraph::Instance().world()->addRawRigidBody(g_lpTissue->getB3RigidBody());
+	TheSceneGraph::Instance().add(g_lpTissue);
+	g_lpTissue->setAnimate(false);
+	SAFE_DELETE(temp);
+
+
+	g_lpAvatar->setTissue(g_lpTissue);
+	LogInfo("Mesh loaded");
 }
 
 int main(int argc, char* argv[]) {
 	cout << "Cutting tets" << endl;
+
+	g_parser.add_option("input", "[filepath] set input file in vega format",
+			Value(AnsiStr("internal")));
+	g_parser.add_option("example",
+			"[one, two, cube, eggshell] set an internal example",
+			Value(AnsiStr("two")));
+	g_parser.add_option("gizmo",
+			"loads a file to set gizmo location and orientation",
+			Value(AnsiStr("gizmo.ini")));
+
+	if (g_parser.parse(argc, argv) < 0)
+		exit(0);
+
+	//file path
+	g_strFilePath = ExtractFilePath(GetExePath()) + g_parser.value<AnsiStr>("input");
+	if (FileExists(g_strFilePath))
+		LogInfoArg1("input file: %s.", g_strFilePath.cptr());
+	else
+		g_strFilePath = "";
 
 	//Initialize app
 	glutInit(&argc, argv);
@@ -309,24 +423,9 @@ int main(int argc, char* argv[]) {
 	TheSceneGraph::Instance().addSceneBox(AABB(vec3f(-10, -10, -16), vec3f(10, 10, 16)));
 
 
-	/*
-	//load brain mesh
-	SGMesh* leftpial = new SGMesh(strLeftPial);
-	leftpial->transform()->setScale(vec3f(0.01));
-	leftpial->transform()->rotate(vec3f(1, 0, 0), -90.0);
-	leftpial->transform()->translate(vec3f(4, 1, 0));
-	TheSceneGraph::Instance().add(leftpial);
-
-	SGMesh* rightpial = new SGMesh(strRightPial);
-	rightpial->transform()->setScale(vec3f(0.01));
-	rightpial->transform()->rotate(vec3f(1, 0, 0), -90.0);
-	rightpial->transform()->translate(vec3f(4, 1, 0));
-	TheSceneGraph::Instance().add(rightpial);
-	*/
-
 	//floor
 	Geometry g;
-	g.addCube(vec3f(-8, -0.1, -8), vec3f(8, 0, 8));
+	g.addCube(vec3f(-8, -0.1, -8), vec3f(8, 0.1, 8));
 	g.addPerVertexColor(vec4f(0.5, 0.5, 0.5, 1));
 	SGBulletRigidMesh* floor = new SGBulletRigidMesh();
 	floor->setup(g, 0.0);
@@ -357,32 +456,21 @@ int main(int argc, char* argv[]) {
 	}
 	*/
 
-	//Add deformable object
-	VolMesh* pVolMesh = VolMeshSamples::CreateEggShell(16, 16, 2.0f, 0.4f);
-	//VolMesh* pVolMesh = VolMeshSamples::CreateTruthCube(10, 10, 10, 0.1);
-	for(U32 i=0; i < pVolMesh->countNodes(); i++) {
-		NODE& n = pVolMesh->nodeAt(i);
-		n.pos = n.pos + vec3d(0, 2, 0);
-		n.restpos = n.restpos + vec3d(0, 2, 0);
-	}
-
-
-	g_lpTissue = new SGBulletRigidBodyCuttableMesh(*pVolMesh, pVolMesh->countNodes());
-	g_lpTissue->setFlagDrawSweepSurf(true);
-	g_lpTissue->setFlagSplitMeshAfterCut(true);
-	//g_lpTissue->transform()->setTranslate(vec3f(0.0f, 6.0f, 0.0f));
-
-	TheSceneGraph::Instance().world()->addRawRigidBody(g_lpTissue->getB3RigidBody());
-	TheSceneGraph::Instance().add(g_lpTissue);
-	SAFE_DELETE(pVolMesh);
 
 	//Scalpel
 	g_lpAvatar = new AvatarRing(TheTexManager::Instance().get("spin"));
+	//g_lpAvatar = new AvatarScalpel();
 	g_lpAvatar->setTissue(g_lpTissue);
 	g_lpAvatar->setOnCutFinishedEventHandler(finishedcut);
 	TheSceneGraph::Instance().add(g_lpAvatar);
 	TheGizmoManager::Instance().setFocusedNode(g_lpAvatar);
-	TheGizmoManager::Instance().cmdTranslate(vec3f(0,5,0));
+
+	//load gizmo manager file
+	AnsiStr strGizmoFP = g_parser.value<AnsiStr>("gizmo");
+	TheGizmoManager::Instance().readConfig(strGizmoFP);
+
+
+	resetMesh();
 
 	//render mask
 //	SGRenderMask* renderMask = new SGRenderMask(TheTexManager::Instance().get("maskalpha"));

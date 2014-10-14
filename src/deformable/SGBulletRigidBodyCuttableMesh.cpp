@@ -12,17 +12,12 @@ namespace MESH {
 
 SGBulletRigidBodyCuttableMesh::SGBulletRigidBodyCuttableMesh(const VolMesh& volmesh, double mass): CuttableMesh(volmesh) {
 	// TODO Auto-generated constructor stub
-	init();
-	setup(volmesh, mass);
+	m_lpRigidBody = NULL;
+	this->setup(volmesh, mass);
 }
 
 SGBulletRigidBodyCuttableMesh::~SGBulletRigidBodyCuttableMesh() {
 	// TODO Auto-generated destructor stub
-}
-
-void SGBulletRigidBodyCuttableMesh::init() {
-	m_lpRigidBody = NULL;
-	resetTransform();
 }
 
 void SGBulletRigidBodyCuttableMesh::cleanup() {
@@ -112,21 +107,7 @@ void SGBulletRigidBodyCuttableMesh::updateMotionStateFromNodeTransform() {
 
 
 void SGBulletRigidBodyCuttableMesh::draw() {
-
-	if(m_spTransform)
-		m_spTransform->bind();
-	//CuttableMesh::draw();
-	if(m_spEffect)
-		m_spEffect->bind();
-
-	VolMesh::draw();
-
-	if(m_spEffect)
-		m_spEffect->unbind();
-
-
-	if(m_spTransform)
-		m_spTransform->unbind();
+	CuttableMesh::draw();
 }
 
 void SGBulletRigidBodyCuttableMesh::timestep() {

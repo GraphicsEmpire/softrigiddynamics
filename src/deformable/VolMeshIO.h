@@ -22,6 +22,13 @@ public:
 	//only export to obj file for inspection purposes
 	static bool writeObj(const VolMesh* vm, const AnsiStr& strPath);
 
+	static bool fitmesh(VolMesh* vm, const AABB& toBox);
+	static bool rotatemesh(VolMesh* vm, const quatd& quat);
+
+
+	static bool convertMatlabTextToVega(const AnsiStr& strNodesFP,
+										const AnsiStr& strFacesFP,
+								   	    const AnsiStr& strCellsFP);
 };
 
 }
