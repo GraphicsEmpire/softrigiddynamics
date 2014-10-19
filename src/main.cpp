@@ -133,6 +133,14 @@ void NormalKey(unsigned char key, int x, int y)
 	}
 	break;
 
+	case('.'):{
+		if(g_lpTissue)
+			g_lpTissue->setDrawWireFrame(!g_lpTissue->getDrawWireFrame());
+		LogInfoArg1("Wireframe mode is %d", g_lpTissue->getDrawWireFrame());
+		break;
+	}
+
+
 	case(27):
 	{
 		//Saving Settings and Exit
