@@ -28,6 +28,8 @@ using namespace PS::MESH;
 using namespace PS::FILESTRINGUTILS;
 using namespace std;
 
+AvatarScalpel* g_lpScalpel = NULL;
+AvatarRing* g_lpRing = NULL;
 
 IAvatar* g_lpAvatar = NULL;
 SGBulletRigidBodyCuttableMesh* g_lpTissue = NULL;
@@ -36,6 +38,7 @@ AnsiStr g_strFilePath;
 
 
 void resetMesh();
+void finishedcut();
 
 void draw() {
 	TheSceneGraph::Instance().draw();
@@ -106,6 +109,22 @@ void NormalKey(unsigned char key, int x, int y)
 		break;
 	}
 
+	case('t'): {
+		if(g_lpAvatar == g_lpScalpel) {
+			g_lpAvatar = g_lpRing;
+			g_lpScalpel->setVisible(false);
+		}
+		else {
+			g_lpAvatar = g_lpScalpel;
+			g_lpRing->setVisible(false);
+		}
+
+		g_lpAvatar->setVisible(true);
+		g_lpAvatar->setTissue(g_lpTissue);
+		g_lpAvatar->setOnCutFinishedEventHandler(finishedcut);
+		TheGizmoManager::Instance().setFocusedNode(g_lpAvatar);
+		break;
+	}
 	case('x'):{
 		TheGizmoManager::Instance().setAxis(axisX);
 	}
@@ -372,6 +391,7 @@ int main(int argc, char* argv[]) {
 
 	g_parser.add_option("input", "[filepath] set input file in vega format",
 			Value(AnsiStr("internal")));
+	g_parser.add_toggle("ringscalpel", "If the switch presents then the ring scalpel will be used");
 	g_parser.add_option("example",
 			"[one, two, cube, eggshell] set an internal example",
 			Value(AnsiStr("two")));
@@ -466,11 +486,20 @@ int main(int argc, char* argv[]) {
 
 
 	//Scalpel
-	g_lpAvatar = new AvatarRing(TheTexManager::Instance().get("spin"));
-	//g_lpAvatar = new AvatarScalpel();
+	g_lpScalpel = new AvatarScalpel();
+	g_lpRing = new AvatarRing(TheTexManager::Instance().get("spin"));
+	TheSceneGraph::Instance().add(g_lpScalpel);
+	TheSceneGraph::Instance().add(g_lpRing);
+
+	if(g_parser.value<int>("ringscalpel")) {
+		g_lpAvatar = g_lpRing;
+	}
+	else {
+		g_lpAvatar = g_lpScalpel;
+	}
+
 	g_lpAvatar->setTissue(g_lpTissue);
 	g_lpAvatar->setOnCutFinishedEventHandler(finishedcut);
-	TheSceneGraph::Instance().add(g_lpAvatar);
 	TheGizmoManager::Instance().setFocusedNode(g_lpAvatar);
 
 	//load gizmo manager file
