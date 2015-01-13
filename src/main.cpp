@@ -322,6 +322,7 @@ void finishedcut() {
 	vMeshes.clear();
 
 	g_lpTissue = vPhysicsMeshes[idxMaxCell];
+	g_lpTissue->setAnimate(false);
 	if(g_lpAvatar)
 		g_lpAvatar->setTissue(g_lpTissue);
 
@@ -413,7 +414,7 @@ int main(int argc, char* argv[]) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
 	glutInitWindowSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-	glutCreateWindow("OpenGL Framework");
+	glutCreateWindow("SoftRigidDynamics - Pourya Shirazian");
 	glutDisplayFunc(draw);
 	glutReshapeFunc(def_resize);
 	glutMouseFunc(MousePress);
@@ -453,7 +454,7 @@ int main(int argc, char* argv[]) {
 
 	//floor
 	Geometry g;
-	g.addCube(vec3f(-8, -0.1, -8), vec3f(8, 0.1, 8));
+	g.addCube(vec3f(-8, -2.0, -8), vec3f(8, -1.8, 8));
 	g.addPerVertexColor(vec4f(0.5, 0.5, 0.5, 1));
 	SGBulletRigidMesh* floor = new SGBulletRigidMesh();
 	floor->setup(g, 0.0);
@@ -493,9 +494,11 @@ int main(int argc, char* argv[]) {
 
 	if(g_parser.value<int>("ringscalpel")) {
 		g_lpAvatar = g_lpRing;
+		g_lpScalpel->setVisible(false);
 	}
 	else {
 		g_lpAvatar = g_lpScalpel;
+		g_lpRing->setVisible(false);
 	}
 
 	g_lpAvatar->setTissue(g_lpTissue);

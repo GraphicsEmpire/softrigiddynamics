@@ -4,7 +4,7 @@
 		<cconfiguration id="cdt.managedbuild.config.gnu.exe.debug.281345391">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.exe.debug.281345391" moduleId="org.eclipse.cdt.core.settings" name="Debug">
 				<macros>
-					<stringMacro name="CPP_COMPONENTS" type="VALUE_TEXT" value="/home/pourya/Desktop/platform/libs"/>
+					<stringMacro name="CPP_LIBS" type="VALUE_TEXT" value="/home/pourya/platform/libs"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -32,8 +32,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty/bullet3}&quot;"/>
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/include"/>
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/include"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/include"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/tbb/include"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/loki/include"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.952176015" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.476346241" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -47,8 +47,8 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug.998292370" name="GCC C++ Linker" superClass="cdt.managedbuild.tool.gnu.cpp.linker.exe.debug">
 								<option id="gnu.cpp.link.option.paths.1559166076" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/lib/x86_64"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/build/linux_intel64_gcc_cc4.8_libc2.17_kernel3.11.0_release"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/lib"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/tbb/build/linux_intel64_gcc_cc4.8_libc2.19_kernel3.13.0_release"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/loki/lib"/>
 								</option>
 								<option id="gnu.cpp.link.option.libs.1259765226" name="Libraries (-l)" superClass="gnu.cpp.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="dl"/>
@@ -85,7 +85,7 @@
 		<cconfiguration id="cdt.managedbuild.config.gnu.exe.release.728136341">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.config.gnu.exe.release.728136341" moduleId="org.eclipse.cdt.core.settings" name="Release">
 				<macros>
-					<stringMacro name="CPP_COMPONENTS" type="VALUE_TEXT" value="/home/pourya/Desktop/platform/libs"/>
+					<stringMacro name="CPP_LIBS" type="VALUE_TEXT" value="/home/pourya/platform/libs"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -113,8 +113,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/3rdparty/bullet3}&quot;"/>
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/include"/>
 									<listOptionValue builtIn="false" value="/usr/local/cuda/include"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/include"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/include"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/tbb/include"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/loki/include"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.other.other.246496525" name="Other flags" superClass="gnu.cpp.compiler.option.other.other" value="-c -fmessage-length=0 -std=c++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.220741537" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -143,8 +143,8 @@
 								</option>
 								<option id="gnu.cpp.link.option.paths.1713711779" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
 									<listOptionValue builtIn="false" value="/opt/AMDAPP/lib/x86_64"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/tbb/build/linux_intel64_gcc_cc4.8_libc2.17_kernel3.11.0_release"/>
-									<listOptionValue builtIn="false" value="${CPP_COMPONENTS}/LOKI/lib"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/tbb/build/linux_intel64_gcc_cc4.8_libc2.19_kernel3.13.0_release"/>
+									<listOptionValue builtIn="false" value="${CPP_LIBS}/loki/lib"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.linker.input.1692157152" superClass="cdt.managedbuild.tool.gnu.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

@@ -111,7 +111,7 @@ void SGBulletRigidBodyCuttableMesh::draw() {
 }
 
 void SGBulletRigidBodyCuttableMesh::timestep() {
-	if(m_lpRigidBody == NULL)
+	if((m_lpRigidBody == NULL) || (m_animate == false))
 		return;
 
 	updateNodeTransformFromMotionState();

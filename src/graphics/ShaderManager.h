@@ -1,7 +1,7 @@
 #ifndef SHADERMANAGER_H
 #define SHADERMANAGER_H
 
-#include <loki/Singleton.h>
+#include "loki/Singleton.h"
 #include "base/MathBase.h"
 #include "base/FastAccessToNamedResource.h"
 #include "GLShader.h"
